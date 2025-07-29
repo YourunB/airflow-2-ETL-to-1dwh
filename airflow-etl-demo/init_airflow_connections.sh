@@ -1,11 +1,41 @@
 #!/bin/bash
 
+echo "Waiting for Airflow to be ready..."
+
+# Ждём, пока Webserver станет доступен
+until airflow connections list >/dev/null 2>&1; do
+  echo "Waiting for Airflow CLI to be available..."
+  sleep 2
+done
+
+echo "Creating Airflow connections..."
+
+airflow connections delete 'pg_source1' || true
+airflow connections delete 'pg_source2' || true
+airflow connections delete 'pg_dwh' || true
+
 airflow connections add 'pg_source1' \
-  --conn-uri 'postgresql://user1:pass1@host.docker.internal:5434/source1' || echo "pg_source1 already exists, skipping"
+    --conn-type 'postgres' \
+    --conn-host 'postgres_source1' \
+    --conn-port '5432' \
+    --conn-schema 'source1' \
+    --conn-login 'user1' \
+    --conn-password 'pass1'
 
 airflow connections add 'pg_source2' \
-  --conn-uri 'postgresql://user2:pass2@host.docker.internal:5435/source2' || echo "pg_source2 already exists, skipping"
+    --conn-type 'postgres' \
+    --conn-host 'postgres_source2' \
+    --conn-port '5432' \
+    --conn-schema 'source2' \
+    --conn-login 'user2' \
+    --conn-password 'pass2'
 
 airflow connections add 'pg_dwh' \
-  --conn-uri 'postgresql://dwhuser:dwhpass@host.docker.internal:5436/dwh' || echo "pg_dwh already exists, skipping"
+    --conn-type 'postgres' \
+    --conn-host 'postgres_dwh' \
+    --conn-port '5432' \
+    --conn-schema 'dwh' \
+    --conn-login 'dwhuser' \
+    --conn-password 'dwhpass'
 
+echo "Done creating Airflow connections."
